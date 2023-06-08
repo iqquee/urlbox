@@ -52,7 +52,8 @@ Inother words, whenever you make a request using this method, you wait to get th
 This method takes in the Request{} struct as a parameter.
 ### List of all the fields available in the Request{} struct.
 ```go
-type Request struct {
+type (
+    Request struct {
 		Url     string  `json:"url"`     // url of website to screenshot
 		Format  string  `json:"format"` // screenshot file format
 		Options Options // optional params for the request
@@ -84,7 +85,7 @@ type Request struct {
 		Delay   int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
 		TimeOut int // the amount of time to wait for the requested URL to respond, in milliseconds.
 	}
-}
+)
 ```
 
 ```go
