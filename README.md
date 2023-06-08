@@ -19,17 +19,42 @@ go get github.com/iqquee/urlbox
 $ touch example.go
 # open the just created example.go file in the text editor of your choice
 ```
+## List of file formats you could use for the Format field in the Request{} struct. 
+```go
+const (
+	//FileFormatPng for png file format
+	FileFormatPng string = "png"
+	//FileFormatJpeg for jpeg file format
+	FileFormatJpeg string = "jpeg"
+	// FileFormatAvif for avif file format
+	FileFormatAvif string = "avif"
+	//FileFormatWebp for webp file format
+	FileFormatWebp string = "webp"
+	//FileFormatWebm for webm file format
+	FileFormatWebm string = "webm"
+	// FileFormatPdf for pdf file format
+	FileFormatPdf string = "pdf"
+	//FileFormatSvg for svg file format
+	FileFormatSvg string = "svg"
+	// FileFormatHtml for html file format
+	FileFormatHtml string = "html"
+	// FileFormatMd for md file format
+	FileFormatMd string = "md"
+	// FileFormatMp4 for mp4 file format
+	FileFormatMp4 string = "mp4"
+)
+```
 
 # Screenshot
-The Screenshot method takes the screenshot of a website synchronously. 
+Screenshot takes the screenshot of a website synchronously. 
 Inother words, whenever you make a request using this method, you wait to get the screenshotted data([]byte) from the server.
 
 This method takes in the Request{} struct as a parameter.
-### Below is a list of all the fields available in the Request{} object.
+### List of all the fields available in the Request{} struct.
 ```go
 type Request struct {
 		Url     string  `json:"url"`     // url of website to screenshot
-		Format  string  `json:"fornmat"` // screenshot file format
+		Format  string  `json:"format"` // screenshot file format
 		Options Options // optional params for the request
 	}
 	Options struct {
@@ -109,7 +134,7 @@ func main() {
 ```
 
 # ScreenshotAsync
-ScreenshotAsync allow your application to receive information when a screenshot has been rendered.
+ScreenshotAsync allows your application to receive information when a screenshot has been rendered.
 This allows you to render screenshots asynchronously.
 
 This method takes in the RequestAsync{} struct as a parameter.

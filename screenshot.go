@@ -32,8 +32,8 @@ type (
 		} `json:"meta"`
 	}
 	Request struct {
-		Url     string  `json:"url"`     // url of website to screenshot
-		Format  string  `json:"fornmat"` // screenshot file format
+		Url     string  `json:"url"`    // url of website to screenshot
+		Format  string  `json:"format"` // screenshot file format
 		Options Options // optional params for the request
 	}
 	Options struct {
