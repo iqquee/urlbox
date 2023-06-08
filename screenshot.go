@@ -3,7 +3,6 @@ package urlbox
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 )
 
@@ -14,90 +13,86 @@ var (
 
 type (
 	Request struct {
-		Url     string  // url of website to screenshot
-		Format  *string // screenshot file format
+		Url     string  `json:"url"`     // url of website to screenshot
+		Format  string  `json:"fornmat"` // screenshot file format
 		Options Options // optional params for the request
 	}
 	Options struct {
-		FullPage        *bool // for full page screenshot
-		Width           *string
+		FullPage        bool // for full page screenshot
+		Width           int
 		BlockingOptions Blocking // options for blocking or dismissing certain page elements, such as cookie banners
 		SelectorOption  Selector // selector parameter
 		ImageOption     Image    // options relating to the outputted PNG, WebP or JPEG file
-		Download        Download // pass in a filename which sets the content-disposition header on the response. E.g. download=myfilename.png This will make the Urlbox link downloadable, and will prompt the user to save the file as myfilename.png
+		DownloadOption  Download // pass in a filename which sets the content-disposition header on the response. E.g. download=myfilename.png This will make the Urlbox link downloadable, and will prompt the user to save the file as myfilename.png
 		WaitOption      Wait
 	}
 	Blocking struct {
-		BlockAds          *bool // remove ads from page
-		HideCookieBanners *bool // remove cookie banners if any
-		ClickAccept       *bool // click accept buttons to dismiss pop-upsSelector
+		BlockAds          bool `json:"block_ads"`           // remove ads from page
+		HideCookieBanners bool `json:"hide_cookie_banners"` // remove cookie banners if any
+		ClickAccept       bool `json:"click_accept"`        // click accept buttons to dismiss pop-upsSelector
 	}
 	Selector struct {
-		Selector              *string // for css selectors e.g #playground for id of playground
-		FailIfSelectorMissing *bool   // fail the request when the selector is not found
+		Selector              string `json:"selector"`                 // for css selectors e.g #playground for id of playground
+		FailIfSelectorMissing bool   `json:"fail_if_selector_missing"` // fail the request when the selector is not found
 	}
 
 	Image struct {
-		Retina  *bool // take a 'retina' or high-definition screenshot, equivalent to setting a device pixel ratio of 2.0 or @2x. Please note that retina screenshots will be double the normal dimensions and will normally take slightly longer to process due to the much bigger image size.
-		Quality int   // the image quality of the resulting screenshot (JPEG/WebP only)
-	}
-
-	Wait struct {
-		Delay   *int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
-		TimeOut *int // the amount of time to wait for the requested URL to respond, in milliseconds.
+		Retina  bool `json:"retina"`  // take a 'retina' or high-definition screenshot, equivalent to setting a device pixel ratio of 2.0 or @2x. Please note that retina screenshots will be double the normal dimensions and will normally take slightly longer to process due to the much bigger image size.
+		Quality int  `json:"quality"` // the image quality of the resulting screenshot (JPEG/WebP only)
 	}
 
 	Download struct {
 		DownloadFile bool
-		FileName     *string
+		FileName     string `json:"download"`
 	}
 
-	Response struct {
-		File io.ReadCloser `json:"file"`
+	Wait struct {
+		Delay   int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
+		TimeOut int // the amount of time to wait for the requested URL to respond, in milliseconds.
 	}
 )
 
-// parse() sets up default values if the user doesnt pass any params in
+// parse() sets up default values if the user doesn't pass any params in
 func (r Request) parse() Request {
 	// if a file format is not provided, set file format as png
-	if r.Format == nil {
+	if r.Format == "" {
 		png := FileFormatPng
-		r.Format = &png
+		r.Format = png
 	}
 	// if FullPage Options field is not passed set to false
-	if r.Options.FullPage == nil {
+	if !r.Options.FullPage {
 		fullPage := false
-		r.Options.FullPage = &fullPage
+		r.Options.FullPage = fullPage
 	}
 	// if Width Options field is not passed set to DefaultWidth
-	if r.Options.Width == nil {
+	if r.Options.Width == 0 {
 		width := DefaultWidth
-		r.Options.Width = &width
+		r.Options.Width = width
 	}
 	// if BlockAds Options field is not passed set to true
-	if r.Options.BlockingOptions.BlockAds == nil {
+	if !r.Options.BlockingOptions.BlockAds {
 		blockAds := true
-		r.Options.BlockingOptions.BlockAds = &blockAds
+		r.Options.BlockingOptions.BlockAds = blockAds
 	}
 	// if HideCookieBanners Options field is not passed set to true
-	if r.Options.BlockingOptions.HideCookieBanners == nil {
+	if !r.Options.BlockingOptions.HideCookieBanners {
 		cookie := true
-		r.Options.BlockingOptions.HideCookieBanners = &cookie
+		r.Options.BlockingOptions.HideCookieBanners = cookie
 	}
 	// if ClickAccept Options field is not passed set to true
-	if r.Options.BlockingOptions.ClickAccept == nil {
+	if !r.Options.BlockingOptions.ClickAccept {
 		accept := true
-		r.Options.BlockingOptions.ClickAccept = &accept
+		r.Options.BlockingOptions.ClickAccept = accept
 	}
 	// by default FailIfSelectorMissing should be false. Even if the selector is not found, it should not return any error
-	if r.Options.SelectorOption.FailIfSelectorMissing == nil {
+	if !r.Options.SelectorOption.FailIfSelectorMissing {
 		failSelector := false
-		r.Options.SelectorOption.FailIfSelectorMissing = &failSelector
+		r.Options.SelectorOption.FailIfSelectorMissing = failSelector
 	}
 	// by default the Retina is set to false
-	if r.Options.ImageOption.Retina == nil {
+	if !r.Options.ImageOption.Retina {
 		retina := false
-		r.Options.ImageOption.Retina = &retina
+		r.Options.ImageOption.Retina = retina
 	}
 	// by default the Quality is set to 80
 	if r.Options.ImageOption.Quality == 0 {
@@ -105,48 +100,71 @@ func (r Request) parse() Request {
 		r.Options.ImageOption.Quality = quality
 	}
 	// by default the Delay is set to 0
-	if r.Options.WaitOption.Delay == nil {
+	if r.Options.WaitOption.Delay == 0 {
 		delay := 0
-		r.Options.WaitOption.Delay = &delay
+		r.Options.WaitOption.Delay = delay
 	}
 	// by default the TimeOut is set to 30000 in milliseconds(3 seconds)
-	if r.Options.WaitOption.TimeOut == nil {
+	if r.Options.WaitOption.TimeOut == 0 {
 		timeOut := 30000
-		r.Options.WaitOption.TimeOut = &timeOut
+		r.Options.WaitOption.TimeOut = timeOut
 	}
 
 	return r
 }
 
-func (c *Client) SynchronousScreenshot(r Request) (*Response, error) {
+func (c *Client) Screenshot(rq Request) ([]byte, error) {
 	// the function shouldnt run if there was no url provided
-	if r.Url == "" {
+	if rq.Url == "" {
 		return nil, ErrUrlRequired
 	}
 	// check if the Image quality is not above 100
-	if r.Options.ImageOption.Quality > 100 {
+	if rq.Options.ImageOption.Quality > 100 {
 		return nil, ErrImageQualityExceeded
 	}
 
-	r.parse()
+	r := rq.parse()
 
-	var downloadFileName string
-	if r.Options.Download.DownloadFile {
-		fileName := fmt.Sprintf("%v.%v", r.Options.Download.FileName, r.Format)
-		downloadFileName = fileName
-	}
 	// setup the url
-	url := fmt.Sprintf("%s/%v?url=%s&width=%v&full_page=%v&block_ads=%v&hide_cookie_banners=%v&click_accept=%v&selector=%v&retina=%v&quality=%v&download=%v&delay=%v&timeout=%v	",
-		c.ApiKey, &r.Format, r.Url, &r.Options.Width, &r.Options.FullPage, &r.Options.BlockingOptions.BlockAds,
-		&r.Options.BlockingOptions.HideCookieBanners, &r.Options.BlockingOptions.ClickAccept, &r.Options.SelectorOption.Selector,
-		&r.Options.ImageOption.Retina, r.Options.ImageOption.Quality, downloadFileName, r.Options.WaitOption.Delay, r.Options.WaitOption.TimeOut,
+	url := fmt.Sprintf("%s/%v?url=%s&width=%v&full_page=%v&block_ads=%v&hide_cookie_banners=%v&click_accept=%v&retina=%v&quality=%v&delay=%v&timeout=%v",
+		c.ApiKey, r.Format, r.Url, r.Options.Width, r.Options.FullPage, r.Options.BlockingOptions.BlockAds,
+		r.Options.BlockingOptions.HideCookieBanners, r.Options.BlockingOptions.ClickAccept,
+		r.Options.ImageOption.Retina, r.Options.ImageOption.Quality, r.Options.WaitOption.Delay, r.Options.WaitOption.TimeOut,
 	)
 
-	var response Response
-
-	if err := c.newRequest(http.MethodGet, url, nil, response); err != nil {
+	res, err := c.newRequest(http.MethodGet, url, nil)
+	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return res, nil
+}
+
+func (c *Client) ScreenshotAsync(rq Request) ([]byte, error) {
+	// the function shouldnt run if there was no url provided
+	if rq.Url == "" {
+		return nil, ErrUrlRequired
+	}
+	// check if the Image quality is not above 100
+	if rq.Options.ImageOption.Quality > 100 {
+		return nil, ErrImageQualityExceeded
+	}
+
+	r := rq.parse()
+
+	var downloadFileName string
+	if r.Options.DownloadOption.DownloadFile {
+		fileName := fmt.Sprintf("%v.%v", r.Options.DownloadOption.FileName, r.Format)
+		downloadFileName = fileName
+	}
+	r.Options.DownloadOption.FileName = downloadFileName
+
+	url := "render/sync"
+
+	res, err := c.newRequest(http.MethodPost, url, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
