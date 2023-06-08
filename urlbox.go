@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -90,7 +89,7 @@ func (c *Client) newRequest(method, reqURL string, reqBody interface{}) ([]byte,
 
 	defer res.Body.Close()
 
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "http client ::: client failed to read file")
 	}
