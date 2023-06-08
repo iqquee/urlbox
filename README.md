@@ -5,6 +5,8 @@ Now there's no need to muck around with http clients, etc...
 
 Just initialise the UrlboxClient and make a screenshot of a URL in seconds.
 
+# Get Started
+In other to use this package, you need to first head over to https://urlbox.io to create an account to get your `Publishable Key` (api key) and `Secret Key`.
 # Documentation
 See the [Urlbox API Docs](https://www.urlbox.io/docs/overview)
 
