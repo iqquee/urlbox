@@ -32,8 +32,10 @@ const (
 	FileFormatMd string = "md"
 	// FileFormatMp4 for mp4 file format
 	FileFormatMp4 string = "mp4"
-	// DefaultWidth default width of the screen shots to be taken
-	DefaultWidth    int = 1280
+	// DefaultWidth default width of the screen shot to be taken
+	DefaultWidth int = 1280
+	// DefaultWidth default height of the screen shot to be taken
+	DefaultHeight   int = 1024
 	DefaultSelector     = "random_default_selector_will_not_be_found" // DefaultSelector is set so that you can have the flexibility of adding a selector params if there is a need for it. This selector does not affect the response from urlbox as it is not valid. if the selector is not found, Urlbox will take a normal viewport screenshot as in this case.
 )
 

@@ -15,6 +15,7 @@ var (
 )
 
 type (
+	// Request parameter for the Screenshot method
 	RequestAsync struct {
 		Url        string `json:"url"`         // url of website to screenshot
 		WebhookUrl string `json:"webhook_url"` // Pass a webhook URL in as the webhook_url option and Urlbox will send a POST request back to that URL with data about the screenshot in JSON format once it has completed rendering
@@ -31,39 +32,47 @@ type (
 			EndTime   string `json:"endTime"`
 		} `json:"meta"`
 	}
+
+	// Request parameter for the Screenshot method
 	Request struct {
 		Url     string  `json:"url"`    // url of website to screenshot
 		Format  string  `json:"format"` // screenshot file format
 		Options Options // optional params for the request
 	}
+	// optional parameter
 	Options struct {
-		FullPage        bool // for full page screenshot
-		Width           int
+		FullPage        bool     // for full page screenshot
+		Width           int      // the viewport width of the browser, in pixels
+		Height          int      // the viewport height of the browser, in pixels
 		BlockingOptions Blocking // options for blocking or dismissing certain page elements, such as cookie banners
-		SelectorOption  Selector // selector parameter
+		SelectorOption  Selector // take a screenshot of the element that matches this selector. By default, if the selector is not found, Urlbox will take a normal viewport screenshot. If you prefer Urlbox to fail the request when the selector is not found, pass fail_if_selector_missing=true.
 		ImageOption     Image    // options relating to the outputted PNG, WebP or JPEG file
-		WaitOption      Wait
+		WaitOption      Wait     // options relating to waiting before taking the screenshot
 	}
+	// blocking option parameter
 	Blocking struct {
 		BlockAds          bool `json:"block_ads"`           // remove ads from page
 		HideCookieBanners bool `json:"hide_cookie_banners"` // remove cookie banners if any
 		ClickAccept       bool `json:"click_accept"`        // click accept buttons to dismiss pop-upsSelector
 	}
+	// selector option parameter
 	Selector struct {
 		Selector              string `json:"selector"`                 // for css selectors e.g #playground for id of playground
 		FailIfSelectorMissing bool   `json:"fail_if_selector_missing"` // fail the request when the selector is not found
 	}
-
+	// image option parameter
 	Image struct {
-		Retina  bool `json:"retina"`  // take a 'retina' or high-definition screenshot, equivalent to setting a device pixel ratio of 2.0 or @2x. Please note that retina screenshots will be double the normal dimensions and will normally take slightly longer to process due to the much bigger image size.
-		Quality int  `json:"quality"` // the image quality of the resulting screenshot (JPEG/WebP only)
+		Retina      bool `json:"retina"`      // take a 'retina' or high-definition screenshot, equivalent to setting a device pixel ratio of 2.0 or @2x. Please note that retina screenshots will be double the normal dimensions and will normally take slightly longer to process due to the much bigger image size.
+		Quality     int  `json:"quality"`     // the image quality of the resulting screenshot (JPEG/WebP only)
+		Transparent bool `json:"transparent"` // if a website has no background color set, the image will have a transparent background (PNG/WebP only)
 	}
-
+	// download option parameter
 	// Download struct {
 	// 	DownloadFile bool
 	// 	FileName     string `json:"download"` // pass in a filename which sets the content-disposition header on the response. E.g. download=myfilename.png This will make the Urlbox link downloadable, and will prompt the user to save the file as myfilename.png
 	// }
 
+	// wait option parameter
 	Wait struct {
 		Delay   int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
 		TimeOut int // the amount of time to wait for the requested URL to respond, in milliseconds.
@@ -86,6 +95,11 @@ func (r Request) parse() Request {
 	if r.Options.Width == 0 {
 		width := DefaultWidth
 		r.Options.Width = width
+	}
+	// if Height Options field is not passed set to DefaultHeight
+	if r.Options.Height == 0 {
+		height := DefaultHeight
+		r.Options.Height = height
 	}
 	// if BlockAds Options field is not passed set to true
 	if !r.Options.BlockingOptions.BlockAds {
@@ -122,6 +136,11 @@ func (r Request) parse() Request {
 		quality := 80
 		r.Options.ImageOption.Quality = quality
 	}
+	// by default the Transparent is set to false
+	if !r.Options.ImageOption.Transparent {
+		transparent := false
+		r.Options.ImageOption.Transparent = transparent
+	}
 	// by default the Delay is set to 0
 	if r.Options.WaitOption.Delay == 0 {
 		delay := 0
@@ -154,9 +173,9 @@ func (c *Client) Screenshot(rq Request) ([]byte, error) {
 	r := rq.parse()
 
 	// setup the url
-	url := fmt.Sprintf("%s/%v?url=%s&width=%v&full_page=%v&block_ads=%v&hide_cookie_banners=%v&click_accept=%v&retina=%v&quality=%v&delay=%v&timeout=%v&selector=%s&fail_if_selector_missing=%v",
-		c.ApiKey, r.Format, r.Url, r.Options.Width, r.Options.FullPage, r.Options.BlockingOptions.BlockAds, r.Options.BlockingOptions.HideCookieBanners, r.Options.BlockingOptions.ClickAccept,
-		r.Options.ImageOption.Retina, r.Options.ImageOption.Quality, r.Options.WaitOption.Delay, r.Options.WaitOption.TimeOut, r.Options.SelectorOption.Selector, r.Options.SelectorOption.FailIfSelectorMissing,
+	url := fmt.Sprintf("%s/%v?url=%s&width=%v&height=%v&full_page=%v&block_ads=%v&hide_cookie_banners=%v&click_accept=%v&retina=%v&quality=%v&transparent=%v&delay=%v&timeout=%v&selector=%s&fail_if_selector_missing=%v",
+		c.ApiKey, r.Format, r.Url, r.Options.Width, r.Options.Height, r.Options.FullPage, r.Options.BlockingOptions.BlockAds, r.Options.BlockingOptions.HideCookieBanners, r.Options.BlockingOptions.ClickAccept,
+		r.Options.ImageOption.Retina, r.Options.ImageOption.Quality, r.Options.ImageOption.Transparent, r.Options.WaitOption.Delay, r.Options.WaitOption.TimeOut, r.Options.SelectorOption.Selector, r.Options.SelectorOption.FailIfSelectorMissing,
 	)
 
 	bytes, _, err := c.newRequest(http.MethodGet, url, nil)

@@ -55,34 +55,46 @@ This method takes in the Request{} struct as a parameter.
 ### List of all the fields available in the Request{} struct.
 ```go
 type (
-    Request struct {
-		Url     string  `json:"url"`     // url of website to screenshot
+    // Request parameter for the ScreenshotAsync method
+	Request struct {
+		Url     string  `json:"url"`    // url of website to screenshot
 		Format  string  `json:"format"` // screenshot file format
 		Options Options // optional params for the request
 	}
+	// optional parameter
 	Options struct {
 		FullPage        bool // for full page screenshot
-		Width           int
+		Width           int  // the viewport width of the browser, in pixels
+		Height          int // the viewport height of the browser, in pixels
 		BlockingOptions Blocking // options for blocking or dismissing certain page elements, such as cookie banners
-		SelectorOption  Selector // selector parameter
+		SelectorOption  Selector // take a screenshot of the element that matches this selector. By default, if the selector is not found, Urlbox will take a normal viewport screenshot. If you prefer Urlbox to fail the request when the selector is not found, pass fail_if_selector_missing=true.
 		ImageOption     Image    // options relating to the outputted PNG, WebP or JPEG file
-		WaitOption      Wait
+		WaitOption      Wait // options relating to waiting before taking the screenshot 
 	}
+	// blocking option parameter
 	Blocking struct {
 		BlockAds          bool `json:"block_ads"`           // remove ads from page
 		HideCookieBanners bool `json:"hide_cookie_banners"` // remove cookie banners if any
 		ClickAccept       bool `json:"click_accept"`        // click accept buttons to dismiss pop-upsSelector
 	}
+	// selector option parameter
 	Selector struct {
 		Selector              string `json:"selector"`                 // for css selectors e.g #playground for id of playground
 		FailIfSelectorMissing bool   `json:"fail_if_selector_missing"` // fail the request when the selector is not found
 	}
-
+	// image option parameter
 	Image struct {
-		Retina  bool `json:"retina"`  // take a 'retina' or high-definition screenshot, equivalent to setting a device pixel ratio of 2.0 or @2x. Please note that retina screenshots will be double the normal dimensions and will normally take slightly longer to process due to the much bigger image size.
-		Quality int  `json:"quality"` // the image quality of the resulting screenshot (JPEG/WebP only)
+		Retina      bool `json:"retina"`      // take a 'retina' or high-definition screenshot, equivalent to setting a device pixel ratio of 2.0 or @2x. Please note that retina screenshots will be double the normal dimensions and will normally take slightly longer to process due to the much bigger image size.
+		Quality     int  `json:"quality"`     // the image quality of the resulting screenshot (JPEG/WebP only)
+		Transparent bool `json:"transparent"` // if a website has no background color set, the image will have a transparent background (PNG/WebP only)
 	}
+	// download option parameter
+	// Download struct {
+	// 	DownloadFile bool
+	// 	FileName     string `json:"download"` // pass in a filename which sets the content-disposition header on the response. E.g. download=myfilename.png This will make the Urlbox link downloadable, and will prompt the user to save the file as myfilename.png
+	// }
 
+	// wait option parameter
 	Wait struct {
 		Delay   int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
 		TimeOut int // the amount of time to wait for the requested URL to respond, in milliseconds.
