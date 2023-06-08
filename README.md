@@ -101,7 +101,6 @@ func main() {
 
 	filename := fmt.Sprintf("%s-%d.%s", strings.Replace(request.Url, "/", "-", -1), time.Now().UTC().Unix(), request.Format)
 
-
 	if err := os.WriteFile(filename, data, 0666); err != nil {
 		fmt.Println("error writing to disk: ", err)
 		return
@@ -142,13 +141,13 @@ func main() {
 		WebhookUrl: "https://example.com/webhooks/urlbox",
 	}
 
-	data, err := client.ScreenshotAsync(request)
+	message, err := client.ScreenshotAsync(request)
 	if err != nil {
 		fmt.Println("an error occured: ", err)
 		return
 	}
 
-	fmt.Println("This is the response: ", data)
+	fmt.Println("This is the response message: ", message)
 
 }
 ```
