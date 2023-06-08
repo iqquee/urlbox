@@ -8,10 +8,29 @@ import (
 
 var (
 	ErrUrlRequired          = errors.New("a url must be passed in")
+	ErrWebhookUrlRequired   = errors.New("a  webhookurl must be passed in")
 	ErrImageQualityExceeded = errors.New("image quality cannot be greater than 100")
+	AsyncSuccessMessage     = "Request successful. Screenshot is being taken and will be sent to the webhook url provided"
+	ErrAsyncUnsuccessful    = errors.New("invalid response code recieved")
 )
 
 type (
+	RequestAsync struct {
+		Url        string `json:"url"`         // url of website to screenshot
+		WebhookUrl string `json:"webhook_url"` // Pass a webhook URL in as the webhook_url option and Urlbox will send a POST request back to that URL with data about the screenshot in JSON format once it has completed rendering
+	}
+	ResponseAsync struct {
+		Event    string `json:"event"`
+		RenderId string `json:"renderId"`
+		Result   struct {
+			RenderUrl string `json:"renderUrl"`
+			Size      int    `json:"size"`
+		} `json:"result"`
+		Meta struct {
+			StartTime string `json:"startTime"`
+			EndTime   string `json:"endTime"`
+		} `json:"meta"`
+	}
 	Request struct {
 		Url     string  `json:"url"`     // url of website to screenshot
 		Format  string  `json:"fornmat"` // screenshot file format
@@ -23,7 +42,6 @@ type (
 		BlockingOptions Blocking // options for blocking or dismissing certain page elements, such as cookie banners
 		SelectorOption  Selector // selector parameter
 		ImageOption     Image    // options relating to the outputted PNG, WebP or JPEG file
-		DownloadOption  Download // pass in a filename which sets the content-disposition header on the response. E.g. download=myfilename.png This will make the Urlbox link downloadable, and will prompt the user to save the file as myfilename.png
 		WaitOption      Wait
 	}
 	Blocking struct {
@@ -41,10 +59,10 @@ type (
 		Quality int  `json:"quality"` // the image quality of the resulting screenshot (JPEG/WebP only)
 	}
 
-	Download struct {
-		DownloadFile bool
-		FileName     string `json:"download"`
-	}
+	// Download struct {
+	// 	DownloadFile bool
+	// 	FileName     string `json:"download"` // pass in a filename which sets the content-disposition header on the response. E.g. download=myfilename.png This will make the Urlbox link downloadable, and will prompt the user to save the file as myfilename.png
+	// }
 
 	Wait struct {
 		Delay   int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
@@ -84,6 +102,11 @@ func (r Request) parse() Request {
 		accept := true
 		r.Options.BlockingOptions.ClickAccept = accept
 	}
+	// by default Selector will be an invalid selector which will result Urlbox to take a normal viewport screenshot
+	if r.Options.SelectorOption.Selector == "" {
+		selector := ""
+		r.Options.SelectorOption.Selector = selector
+	}
 	// by default FailIfSelectorMissing should be false. Even if the selector is not found, it should not return any error
 	if !r.Options.SelectorOption.FailIfSelectorMissing {
 		failSelector := false
@@ -113,6 +136,11 @@ func (r Request) parse() Request {
 	return r
 }
 
+/*
+Screenshot method takes the screenshot of a website synchronously.
+
+Inother words, whenever you make a request using this method, you wait to get the screenshotted data([]byte) from the server.
+*/
 func (c *Client) Screenshot(rq Request) ([]byte, error) {
 	// the function shouldnt run if there was no url provided
 	if rq.Url == "" {
@@ -126,45 +154,46 @@ func (c *Client) Screenshot(rq Request) ([]byte, error) {
 	r := rq.parse()
 
 	// setup the url
-	url := fmt.Sprintf("%s/%v?url=%s&width=%v&full_page=%v&block_ads=%v&hide_cookie_banners=%v&click_accept=%v&retina=%v&quality=%v&delay=%v&timeout=%v",
-		c.ApiKey, r.Format, r.Url, r.Options.Width, r.Options.FullPage, r.Options.BlockingOptions.BlockAds,
-		r.Options.BlockingOptions.HideCookieBanners, r.Options.BlockingOptions.ClickAccept,
-		r.Options.ImageOption.Retina, r.Options.ImageOption.Quality, r.Options.WaitOption.Delay, r.Options.WaitOption.TimeOut,
+	url := fmt.Sprintf("%s/%v?url=%s&width=%v&full_page=%v&block_ads=%v&hide_cookie_banners=%v&click_accept=%v&retina=%v&quality=%v&delay=%v&timeout=%v&selector=%s&fail_if_selector_missing=%v",
+		c.ApiKey, r.Format, r.Url, r.Options.Width, r.Options.FullPage, r.Options.BlockingOptions.BlockAds, r.Options.BlockingOptions.HideCookieBanners, r.Options.BlockingOptions.ClickAccept,
+		r.Options.ImageOption.Retina, r.Options.ImageOption.Quality, r.Options.WaitOption.Delay, r.Options.WaitOption.TimeOut, r.Options.SelectorOption.Selector, r.Options.SelectorOption.FailIfSelectorMissing,
 	)
 
-	res, err := c.newRequest(http.MethodGet, url, nil)
+	bytes, _, err := c.newRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	return bytes, nil
 }
 
-func (c *Client) ScreenshotAsync(rq Request) ([]byte, error) {
+/*
+ScreenshotAsync allow your application to receive information when a screenshot has been rendered.
+
+This allows you to render screenshots asynchronously.
+*/
+func (c *Client) ScreenshotAsync(r RequestAsync) (string, error) {
 	// the function shouldnt run if there was no url provided
-	if rq.Url == "" {
-		return nil, ErrUrlRequired
+	if r.Url == "" {
+		return "", ErrUrlRequired
 	}
-	// check if the Image quality is not above 100
-	if rq.Options.ImageOption.Quality > 100 {
-		return nil, ErrImageQualityExceeded
+	if r.WebhookUrl == "" {
+		return "", ErrWebhookUrlRequired
 	}
 
-	r := rq.parse()
+	url := "render"
 
-	var downloadFileName string
-	if r.Options.DownloadOption.DownloadFile {
-		fileName := fmt.Sprintf("%v.%v", r.Options.DownloadOption.FileName, r.Format)
-		downloadFileName = fileName
-	}
-	r.Options.DownloadOption.FileName = downloadFileName
-
-	url := "render/sync"
-
-	res, err := c.newRequest(http.MethodPost, url, r)
+	_, statusCode, err := c.newRequest(http.MethodPost, url, r)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return res, nil
+	var message string
+	if statusCode == 200 || statusCode == 201 {
+		message = AsyncSuccessMessage
+	} else {
+		return "", ErrAsyncUnsuccessful
+	}
+
+	return message, nil
 }
