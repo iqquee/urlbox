@@ -84,6 +84,7 @@ type Request struct {
 		Delay   int // the amount of time to wait before Urlbox takes the screenshot or PDF, in milliseconds.
 		TimeOut int // the amount of time to wait for the requested URL to respond, in milliseconds.
 	}
+}
 ```
 
 ```go
