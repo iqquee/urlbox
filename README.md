@@ -157,8 +157,8 @@ import (
 )
 
 func main() {
-	apiKey := "LFZu26GbSWgr0qgn"
-	secreteKey := "cd3a89b805c740bdb62bef748bdcebfd"
+	apiKey := ""
+	secreteKey := ""
 	client := urlbox.New(*http.DefaultClient, apiKey, secreteKey)
 
 	request := urlbox.RequestAsync{
