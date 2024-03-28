@@ -1,8 +1,6 @@
 # urlbox
 The Urlbox Go library provides easy access to the Urlbox website screenshot API from your Go application.
 
-Now there's no need to muck around with http clients, etc...
-
 Just initialise the UrlboxClient and make a screenshot of a URL in seconds.
 
 # Get Started
