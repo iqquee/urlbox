@@ -1,7 +1,7 @@
 # urlbox
 The Urlbox Go library provides easy access to the Urlbox website screenshot API from your Go application.
 
-Just initialise the UrlboxClient and make a screenshot of a URL in seconds.
+Just initialise the UrlboxClient and make screenshots of just about any webpage in seconds.
 
 # Get Started
 In other to use this package, you need to first head over to https://urlbox.io to create an account to get your `Publishable Key` (api key) and `Secret Key`.
